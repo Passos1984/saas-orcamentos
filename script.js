@@ -1,6 +1,16 @@
+// 1. A TRANCA (Verifica se o cara está logado antes de carregar o resto)
+if (!localStorage.getItem("usuario_logado")) {
+    window.location.href = "/"; // Manda de volta para o Login se não tiver e-mail salvo
+}
+
+// 2. O RESTO DO SEU CÓDIGO (O que já estava lá)
 let itensOrcamento = [];
 let valorTotal = 0;
+const LINK_API = "https://saas-orcamentos-6v6r.onrender.com"; 
 
+// ... continuação do código ...
+let itensOrcamento = [];
+let valorTotal = 0;
 // --- AJUSTE DE OURO: O link do seu servidor no Render ---
 // Substitua o link abaixo pelo SEU link do Render (o que termina em .onrender.com)
 const LINK_API = "https://saas-orcamentos-6v6r.onrender.com"; 
