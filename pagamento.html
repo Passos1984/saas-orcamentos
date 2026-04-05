@@ -240,10 +240,13 @@
                 Pix</button>
         </div>
 
-        <button class="btn-voltar" onclick="window.location.href='index.html'">Voltar para o sistema</button>
+        <button class="btn-voltar" onclick="window.location.href='/'">Voltar para o sistema</button>
     </div>
 
     <script>
+        // LINK DO SEU SERVIDOR NO RENDER
+        const LINK_API = "https://saas-orcamentos-6v6r.onrender.com";
+
         async function iniciarPagamento(planoEscolhido) {
             const emailUsuario = localStorage.getItem("usuario_logado");
 
@@ -253,13 +256,12 @@
                 return;
             }
 
-            // Esconde os planos e mostra o aviso de carregando
             document.getElementById('area-planos').style.display = 'none';
             document.getElementById('carregando').style.display = 'block';
 
             try {
-                // Bate na sua rota nova do Python
-                const resposta = await fetch('http://127.0.0.1:8000/gerar_pix', {
+                // AJUSTE: Trocado para o link do Render
+                const resposta = await fetch(`${LINK_API}/gerar_pix`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: emailUsuario, plano: planoEscolhido })
@@ -267,24 +269,18 @@
 
                 const dados = await resposta.json();
 
-                // Esconde o aviso de carregando
                 document.getElementById('carregando').style.display = 'none';
 
                 if (resposta.ok) {
-                    // Mostra a área do Pix
                     document.getElementById('pix-area').style.display = 'block';
-
-                    // Coloca a imagem base64 no img
                     document.getElementById('img-qrcode').src = "data:image/jpeg;base64," + dados.qr_code_imagem;
-
-                    // Coloca o texto longo no input
                     document.getElementById('input-copiacola').value = dados.codigo_copia_cola;
                 } else {
                     alert("Erro ao gerar Pix: " + dados.detail);
-                    document.getElementById('area-planos').style.display = 'flex'; // Volta os planos
+                    document.getElementById('area-planos').style.display = 'flex';
                 }
             } catch (erro) {
-                alert("Erro ao conectar com o servidor.");
+                alert("Erro ao conectar com o servidor no Render.");
                 document.getElementById('carregando').style.display = 'none';
                 document.getElementById('area-planos').style.display = 'flex';
                 console.error(erro);
@@ -294,7 +290,7 @@
         function copiarPix() {
             const inputPix = document.getElementById('input-copiacola');
             inputPix.select();
-            inputPix.setSelectionRange(0, 99999); // Para mobile
+            inputPix.setSelectionRange(0, 99999);
             navigator.clipboard.writeText(inputPix.value);
             alert("Código copiado! Cole no aplicativo do seu banco para pagar.");
         }
