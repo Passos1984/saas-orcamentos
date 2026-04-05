@@ -151,10 +151,14 @@ async def receber_notificacao(id: str = None, topic: str = None, db: Session = D
 
 # --- AS LINHAS MÁGICAS PARA O FRONT-END ---
 
-# Faz o FastAPI servir seus arquivos de estilo e scripts
 app.mount("/static", StaticFiles(directory="."), name="static")
 
 @app.get("/")
 async def principal():
-    # Isso faz o link principal abrir o seu arquivo HTML bonitão
+    # MUDANÇA: Agora o link principal manda para o LOGIN primeiro!
+    return FileResponse("login.html")
+
+@app.get("/painel")
+async def abrir_painel():
+    # Criamos uma rota separada para a tela de orçamentos
     return FileResponse("index.html")
