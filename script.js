@@ -1,112 +1,119 @@
-from fastapi import FastAPI, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
-from passlib.context import CryptContext
-from fastapi.middleware.cors import CORSMiddleware
-import models
-import mercadopago
-import uuid
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-import os
+// LINK DO RENDER
+const LINK_API = "https://saas-orcamentos.onrender.com";
 
-app = FastAPI(title="SaaS de Orçamentos API")
+// 1. TRANCA DE SEGURANÇA
+if (!localStorage.getItem("usuario_logado") && !window.location.pathname.includes("login")) {
+    window.location.href = "/";
+}
 
-# Configuração do Mercado Pago
-sdk = mercadopago.SDK("APP_USR-127374858769532-040423-f3a30250b98093c7f0b6dc9926ec86eb-81304613")
+let itensOrcamento = [];
+let valorTotal = 0;
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-def get_db():
-    db = models.SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-class UsuarioCriar(BaseModel):
-    email: str
-    senha: str
-
-class SolicitarOrcamento(BaseModel):
-    email: str
-
-class DadosPagamento(BaseModel):
-    email: str
-    plano: str
-
-# --- ROTAS DE API (BANCO DE DADOS) ---
-
-@app.post("/cadastrar", status_code=status.HTTP_201_CREATED)
-def cadastrar_usuario(user: UsuarioCriar, db: Session = Depends(get_db)):
-    usuario_existente = db.query(models.Usuario).filter(models.Usuario.email == user.email).first()
-    if usuario_existente:
-        raise HTTPException(status_code=400, detail="E-mail já cadastrado.")
-    senha_criptografada = pwd_context.hash(user.senha)
-    novo_usuario = models.Usuario(email=user.email, senha_hash=senha_criptografada)
-    db.add(novo_usuario)
-    db.commit()
-    db.refresh(novo_usuario)
-    return {"mensagem": "Conta criada!", "plano": novo_usuario.plano}
-
-@app.post("/login")
-def login(user: UsuarioCriar, db: Session = Depends(get_db)):
-    usuario = db.query(models.Usuario).filter(models.Usuario.email == user.email).first()
-    if not usuario or not pwd_context.verify(user.senha, usuario.senha_hash):
-        raise HTTPException(status_code=401, detail="E-mail ou senha incorretos.")
-    return {"mensagem": "Sucesso!", "plano": usuario.plano}
-
-@app.post("/verificar_limite")
-def verificar_limite(dados: SolicitarOrcamento, db: Session = Depends(get_db)):
-    usuario = db.query(models.Usuario).filter(models.Usuario.email == dados.email).first()
-    if not usuario: raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+// Só executa o código abaixo quando a página carregar inteira
+window.onload = function() {
+    console.log("Sistema de Orçamentos carregado!");
     
-    # REGRA DO PAYWALL
-    if usuario.plano == "Gratis" and usuario.orcamentos_feitos >= 1:
-        raise HTTPException(status_code=402, detail="Limite gratuito atingido!")
-    
-    usuario.orcamentos_feitos += 1
-    db.commit()
-    return {"mensagem": "Liberado!"}
-
-@app.post("/gerar_pix")
-def gerar_pix(dados: DadosPagamento):
-    valor = 10.00 if dados.plano == "Basico" else 30.00
-    payment_data = {
-        "transaction_amount": float(valor),
-        "description": f"Plano {dados.plano} - SaaS Orcamentos",
-        "payment_method_id": "pix",
-        "payer": {"email": dados.email, "first_name": "Cliente"}
-    }
-    request_options = mercadopago.config.RequestOptions()
-    request_options.custom_headers = {'x-idempotency-key': str(uuid.uuid4())}
-    result = sdk.payment().create(payment_data, request_options)
-    payment = result.get("response")
-    return {
-        "codigo_copia_cola": payment["point_of_interaction"]["transaction_data"]["qr_code"],
-        "qr_code_imagem": payment["point_of_interaction"]["transaction_data"]["qr_code_base64"]
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    if(document.getElementById('data-hoje')) {
+        document.getElementById('data-hoje').innerText = hoje;
     }
 
-# --- NAVEGAÇÃO (PÁGINAS) ---
+    if(document.getElementById('nome-cliente')) {
+        document.getElementById('nome-cliente').addEventListener('input', function(e) {
+            document.getElementById('doc-cliente-nome').innerText = e.target.value || 'Nenhum cliente informado';
+        });
+    }
+};
 
-app.mount("/static", StaticFiles(directory="."), name="static")
+// FUNÇÃO DE ADICIONAR ITEM (O MOTOR)
+function adicionarItem() {
+    console.log("Botão de adicionar clicado!"); // Isso aparece no F12
 
-@app.get("/")
-async def principal():
-    return FileResponse("login.html")
+    const descInput = document.getElementById('desc-item');
+    const qtdInput = document.getElementById('qtd-item');
+    const valorInput = document.getElementById('valor-item');
 
-@app.get("/painel")
-async def abrir_painel():
-    return FileResponse("index.html")
+    if (!descInput || !qtdInput || !valorInput) {
+        console.error("Erro: Campos de entrada não encontrados no HTML!");
+        return;
+    }
 
-@app.get("/pagamento")
-async def abrir_pagamento():
-    return FileResponse("pagamento.html")
+    const desc = descInput.value;
+    const qtd = parseFloat(qtdInput.value);
+    const valor = parseFloat(valorInput.value);
+
+    if (!desc || isNaN(qtd) || isNaN(valor)) {
+        alert("Por favor, preencha a descrição, quantidade e valor!");
+        return;
+    }
+
+    const subtotal = qtd * valor;
+    itensOrcamento.push({ 
+        descricao: desc, 
+        quantidade: qtd, 
+        valorUnitario: valor, 
+        subtotal: subtotal 
+    });
+    
+    valorTotal += subtotal;
+    atualizarDocumento();
+
+    // Limpa os campos para o próximo item
+    descInput.value = '';
+    qtdInput.value = '1';
+    valorInput.value = '';
+}
+
+function atualizarDocumento() {
+    const tbody = document.getElementById('doc-lista-itens');
+    const totalSpan = document.getElementById('doc-total');
+
+    if (!tbody || !totalSpan) return;
+
+    tbody.innerHTML = '';
+    itensOrcamento.forEach(item => {
+        tbody.innerHTML += `
+            <tr>
+                <td>${item.descricao}</td>
+                <td style="text-align: center;">${item.quantidade}</td>
+                <td style="text-align: right;">R$ ${item.valorUnitario.toFixed(2).replace('.', ',')}</td>
+                <td style="text-align: right;">R$ ${item.subtotal.toFixed(2).replace('.', ',')}</td>
+            </tr>
+        `;
+    });
+
+    totalSpan.innerText = valorTotal.toFixed(2).replace('.', ',');
+}
+
+// Funções de Paywall e PDF (Mantidas)
+async function checarPaywall(acao) {
+    const emailUsuario = localStorage.getItem("usuario_logado");
+    try {
+        const resposta = await fetch(`${LINK_API}/verificar_limite`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: emailUsuario })
+        });
+        if (resposta.ok) {
+            acao === 'pdf' ? gerarPDF() : enviarWhatsApp();
+        } else if (resposta.status === 402) {
+            window.location.href = "/pagamento"; 
+        }
+    } catch (erro) {
+        alert("Erro de conexão com o servidor.");
+    }
+}
+
+function gerarPDF() {
+    const elemento = document.getElementById('documento-orcamento');
+    const opcoes = { margin: 0, filename: 'Orcamento.pdf', html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4' } };
+    html2pdf().set(opcoes).from(elemento).save();
+}
+
+function enviarWhatsApp() {
+    const nome = document.getElementById('nome-cliente').value || 'Cliente';
+    const tel = document.getElementById('telefone-cliente').value;
+    if (!tel) return alert("Informe o WhatsApp");
+    let msg = encodeURIComponent(`Olá, ${nome}! Total: R$ ${valorTotal.toFixed(2)}`);
+    window.open(`https://wa.me/${tel.replace(/\D/g, '')}?text=${msg}`, '_blank');
+}
