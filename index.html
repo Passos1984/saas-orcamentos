@@ -16,12 +16,16 @@
                 <input type="text" id="telefone-cliente" placeholder="WhatsApp">
             </div>
             <div class="grupo-input">
-                <label>Item:</label>
-                <input type="text" id="desc-item" placeholder="Descrição">
-                <input type="number" id="qtd-item" value="1">
-                <input type="number" id="valor-item" placeholder="Valor Unitário">
-                <button id="btn-adicionar" onclick="adicionarItem()">Adicionar Item</button>
-            </div>
+    <label>Item:</label>
+    <input type="text" id="desc-item" placeholder="Descrição (Ex: Criação de Site)">
+    
+    <div style="display: flex; gap: 10px;">
+        <input type="number" id="qtd-item" placeholder="Qtd" value="1" min="1">
+        <input type="number" id="valor-item" placeholder="Valor Unitário (R$)" step="0.01">
+    </div>
+    
+    <button id="btn-adicionar" onclick="adicionarItem()">Adicionar Item</button>
+</div>
             <div class="acoes-finais">
                 <button id="btn-pdf" onclick="checarPaywall('pdf')">Baixar PDF</button>
                 <button id="btn-whatsapp" onclick="checarPaywall('whatsapp')">Enviar WhatsApp</button>
