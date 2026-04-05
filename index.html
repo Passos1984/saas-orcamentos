@@ -1,81 +1,55 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Orçamentos SaaS</title>
+    <title>Gerador de Orçamentos</title>
     <link rel="stylesheet" href="/static/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
-
 <body>
-
     <div class="container">
         <div class="painel-controles">
             <h2>Novo Orçamento</h2>
-
             <div class="grupo-input">
-                <label>Dados do Cliente:</label>
-                <input type="text" id="nome-cliente" placeholder="Nome da empresa ou cliente">
-                <input type="text" id="telefone-cliente" placeholder="WhatsApp (Ex: 51999999999)">
+                <label>Cliente:</label>
+                <input type="text" id="nome-cliente" placeholder="Nome do Cliente">
+                <input type="text" id="telefone-cliente" placeholder="WhatsApp">
             </div>
-
             <div class="grupo-input">
-                <label>Adicionar Item/Serviço:</label>
-                <input type="text" id="desc-item" placeholder="Descrição (Ex: Criação de Site, Instalação...)">
-                <div style="display: flex; gap: 10px;">
-                    <input type="number" id="qtd-item" placeholder="Qtd" value="1" min="1">
-                    <input type="number" id="valor-item" placeholder="Valor Unitário (R$)" step="0.01">
-                </div>
-                <button id="btn-adicionar" onclick="adicionarItem()">Incluir no Orçamento</button>
+                <label>Item:</label>
+                <input type="text" id="desc-item" placeholder="Descrição">
+                <input type="number" id="qtd-item" value="1">
+                <input type="number" id="valor-item" placeholder="Valor Unitário">
+                <button id="btn-adicionar" onclick="adicionarItem()">Adicionar Item</button>
             </div>
-
             <div class="acoes-finais">
                 <button id="btn-pdf" onclick="checarPaywall('pdf')">Baixar PDF</button>
-                <button id="btn-whatsapp" onclick="checarPaywall('whatsapp')">Enviar via WhatsApp</button>
+                <button id="btn-whatsapp" onclick="checarPaywall('whatsapp')">Enviar WhatsApp</button>
+                <button onclick="localStorage.clear(); window.location.href='/'" style="background:#666; color:white">Sair</button>
             </div>
-            <p class="nota">Nota: O botão do WhatsApp envia o texto estruturado. O PDF gerado pode ser anexado
-                manualmente na conversa.</p>
         </div>
 
         <div class="painel-preview">
             <div id="documento-orcamento" class="folha-a4">
                 <div class="cabecalho-doc">
-                    <h1>ORÇAMENTO COMERCIAL</h1>
+                    <h1>ORÇAMENTO</h1>
                     <p>Data: <span id="data-hoje"></span></p>
                 </div>
-
                 <div class="dados-cliente-doc">
-                    <p><strong>Cliente:</strong> <span id="doc-cliente-nome">Nenhum cliente informado</span></p>
+                    <p><strong>Cliente:</strong> <span id="doc-cliente-nome">Nenhum</span></p>
                 </div>
-
                 <table class="tabela-itens">
                     <thead>
-                        <tr>
-                            <th>Descrição</th>
-                            <th style="text-align: center;">Qtd</th>
-                            <th style="text-align: right;">V. Unitário</th>
-                            <th style="text-align: right;">Subtotal</th>
-                        </tr>
+                        <tr><th>Desc</th><th>Qtd</th><th>Unit</th><th>Sub</th></tr>
                     </thead>
-                    <tbody id="doc-lista-itens">
-                    </tbody>
+                    <tbody id="doc-lista-itens"></tbody>
                 </table>
-
                 <div class="total-doc">
                     <h3>Total: R$ <span id="doc-total">0,00</span></h3>
-                </div>
-
-                <div class="rodape-doc">
-                    <p>Orçamento válido por 15 dias.</p>
-                    <p>Obrigado pela preferência!</p>
                 </div>
             </div>
         </div>
     </div>
-
     <script src="/static/script.js"></script>
 </body>
-
 </html>
