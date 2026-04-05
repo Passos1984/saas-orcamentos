@@ -1,61 +1,112 @@
-// TRAVA DE SEGURANÇA NO TOPO
-if (!localStorage.getItem("usuario_logado") && !window.location.href.includes("login.html")) {
-    window.location.href = "/";
-}
+from fastapi import FastAPI, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from pydantic import BaseModel
+from passlib.context import CryptContext
+from fastapi.middleware.cors import CORSMiddleware
+import models
+import mercadopago
+import uuid
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
 
-let itensOrcamento = [];
-let valorTotal = 0;
-const LINK_API = "https://saas-orcamentos.onrender.com";
+app = FastAPI(title="SaaS de Orçamentos API")
 
-const hoje = new Date().toLocaleDateString('pt-BR');
-if(document.getElementById('data-hoje')) document.getElementById('data-hoje').innerText = hoje;
+# Configuração do Mercado Pago
+sdk = mercadopago.SDK("APP_USR-127374858769532-040423-f3a30250b98093c7f0b6dc9926ec86eb-81304613")
 
-function adicionarItem() {
-    const desc = document.getElementById('desc-item').value;
-    const qtd = parseFloat(document.getElementById('qtd-item').value);
-    const valor = parseFloat(document.getElementById('valor-item').value);
-    if (!desc || isNaN(qtd) || isNaN(valor)) return alert("Preencha tudo!");
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    const subtotal = qtd * valor;
-    itensOrcamento.push({ descricao: desc, quantidade: qtd, valorUnitario: valor, subtotal: subtotal });
-    valorTotal += subtotal;
-    atualizarDocumento();
-}
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-function atualizarDocumento() {
-    const tbody = document.getElementById('doc-lista-itens');
-    tbody.innerHTML = '';
-    itensOrcamento.forEach(item => {
-        tbody.innerHTML += `<tr><td>${item.descricao}</td><td style="text-align:center">${item.quantidade}</td><td style="text-align:right">R$ ${item.valorUnitario.toFixed(2)}</td><td style="text-align:right">R$ ${item.subtotal.toFixed(2)}</td></tr>`;
-    });
-    document.getElementById('doc-total').innerText = valorTotal.toFixed(2).replace('.', ',');
-}
+def get_db():
+    db = models.SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-async function checarPaywall(acao) {
-    const email = localStorage.getItem("usuario_logado");
-    try {
-        const res = await fetch(`${LINK_API}/verificar_limite`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: email })
-        });
-        if (res.ok) {
-            acao === 'pdf' ? gerarPDF() : enviarWhatsApp();
-        } else if (res.status === 402) {
-            alert("Limite atingido! Redirecionando para Upgrade...");
-            window.location.href = "/pagamento";
-        }
-    } catch (e) { alert("Erro de conexão."); }
-}
+class UsuarioCriar(BaseModel):
+    email: str
+    senha: str
 
-function gerarPDF() {
-    const element = document.getElementById('documento-orcamento');
-    html2pdf().from(element).save(`Orcamento.pdf`);
-}
+class SolicitarOrcamento(BaseModel):
+    email: str
 
-function enviarWhatsApp() {
-    const tel = document.getElementById('telefone-cliente').value;
-    if(!tel) return alert("Informe o WhatsApp");
-    let msg = encodeURIComponent(`Olá! Seu orçamento total é R$ ${valorTotal.toFixed(2)}`);
-    window.open(`https://wa.me/${tel.replace(/\D/g, '')}?text=${msg}`, '_blank');
-}
+class DadosPagamento(BaseModel):
+    email: str
+    plano: str
+
+# --- ROTAS DE API (BANCO DE DADOS) ---
+
+@app.post("/cadastrar", status_code=status.HTTP_201_CREATED)
+def cadastrar_usuario(user: UsuarioCriar, db: Session = Depends(get_db)):
+    usuario_existente = db.query(models.Usuario).filter(models.Usuario.email == user.email).first()
+    if usuario_existente:
+        raise HTTPException(status_code=400, detail="E-mail já cadastrado.")
+    senha_criptografada = pwd_context.hash(user.senha)
+    novo_usuario = models.Usuario(email=user.email, senha_hash=senha_criptografada)
+    db.add(novo_usuario)
+    db.commit()
+    db.refresh(novo_usuario)
+    return {"mensagem": "Conta criada!", "plano": novo_usuario.plano}
+
+@app.post("/login")
+def login(user: UsuarioCriar, db: Session = Depends(get_db)):
+    usuario = db.query(models.Usuario).filter(models.Usuario.email == user.email).first()
+    if not usuario or not pwd_context.verify(user.senha, usuario.senha_hash):
+        raise HTTPException(status_code=401, detail="E-mail ou senha incorretos.")
+    return {"mensagem": "Sucesso!", "plano": usuario.plano}
+
+@app.post("/verificar_limite")
+def verificar_limite(dados: SolicitarOrcamento, db: Session = Depends(get_db)):
+    usuario = db.query(models.Usuario).filter(models.Usuario.email == dados.email).first()
+    if not usuario: raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+    
+    # REGRA DO PAYWALL
+    if usuario.plano == "Gratis" and usuario.orcamentos_feitos >= 1:
+        raise HTTPException(status_code=402, detail="Limite gratuito atingido!")
+    
+    usuario.orcamentos_feitos += 1
+    db.commit()
+    return {"mensagem": "Liberado!"}
+
+@app.post("/gerar_pix")
+def gerar_pix(dados: DadosPagamento):
+    valor = 10.00 if dados.plano == "Basico" else 30.00
+    payment_data = {
+        "transaction_amount": float(valor),
+        "description": f"Plano {dados.plano} - SaaS Orcamentos",
+        "payment_method_id": "pix",
+        "payer": {"email": dados.email, "first_name": "Cliente"}
+    }
+    request_options = mercadopago.config.RequestOptions()
+    request_options.custom_headers = {'x-idempotency-key': str(uuid.uuid4())}
+    result = sdk.payment().create(payment_data, request_options)
+    payment = result.get("response")
+    return {
+        "codigo_copia_cola": payment["point_of_interaction"]["transaction_data"]["qr_code"],
+        "qr_code_imagem": payment["point_of_interaction"]["transaction_data"]["qr_code_base64"]
+    }
+
+# --- NAVEGAÇÃO (PÁGINAS) ---
+
+app.mount("/static", StaticFiles(directory="."), name="static")
+
+@app.get("/")
+async def principal():
+    return FileResponse("login.html")
+
+@app.get("/painel")
+async def abrir_painel():
+    return FileResponse("index.html")
+
+@app.get("/pagamento")
+async def abrir_pagamento():
+    return FileResponse("pagamento.html")
