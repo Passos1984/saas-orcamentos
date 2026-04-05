@@ -1,300 +1,44 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upgrade - SaaS de Orçamentos</title>
+    <title>Upgrade - Pix</title>
+    <link rel="stylesheet" href="/static/style.css">
     <style>
-        * {
-            box-sizing: border-box;
-            font-family: 'Segoe UI', sans-serif;
-        }
-
-        body {
-            background-color: #f4f4f9;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            background: white;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 800px;
-            text-align: center;
-        }
-
-        h2 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
-
-        p.sub {
-            color: #666;
-            margin-bottom: 40px;
-            font-size: 16px;
-        }
-
-        .planos {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .plano-card {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 30px;
-            width: 100%;
-            max-width: 320px;
-            transition: transform 0.2s;
-            background: #fff;
-            position: relative;
-        }
-
-        .plano-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .plano-destaque {
-            border: 2px solid #0d6efd;
-        }
-
-        .tag-destaque {
-            position: absolute;
-            top: -14px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #0d6efd;
-            color: white;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-
-        .plano-nome {
-            font-size: 22px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .plano-preco {
-            font-size: 36px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 25px;
-        }
-
-        .plano-preco span {
-            font-size: 16px;
-            color: #888;
-            font-weight: normal;
-        }
-
-        .plano-lista {
-            list-style: none;
-            padding: 0;
-            margin: 0 0 30px 0;
-            text-align: left;
-        }
-
-        .plano-lista li {
-            margin-bottom: 12px;
-            color: #555;
-            font-size: 15px;
-        }
-
-        .plano-lista li::before {
-            content: "✅ ";
-            margin-right: 5px;
-        }
-
-        button {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            transition: background 0.2s;
-        }
-
-        .btn-comprar {
-            background-color: #28a745;
-            color: white;
-        }
-
-        .btn-comprar:hover {
-            background-color: #218838;
-        }
-
-        .btn-voltar {
-            background-color: transparent;
-            color: #888;
-            margin-top: 30px;
-            text-decoration: underline;
-            font-weight: normal;
-            width: auto;
-            padding: 10px;
-        }
-
-        .btn-voltar:hover {
-            color: #333;
-        }
-
-        /* Estilos do Bloco do Pix */
-        #pix-area {
-            display: none;
-            margin-top: 20px;
-        }
-
-        #carregando {
-            display: none;
-            color: #0d6efd;
-            font-weight: bold;
-            font-size: 18px;
-            margin: 40px 0;
-        }
-
-        .qr-code-img {
-            width: 250px;
-            height: 250px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            margin: 20px auto;
-            display: block;
-        }
-
-        .pix-input {
-            width: 100%;
-            padding: 12px;
-            background: #f8f9fa;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            margin-bottom: 15px;
-            text-align: center;
-            color: #555;
-            font-size: 14px;
-        }
+        body { text-align: center; padding: 50px; background: #f8f9fa; }
+        .card { background: white; padding: 30px; border-radius: 10px; max-width: 500px; margin: 0 auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .qr-code { width: 200px; margin: 20px 0; }
+        .pix-code { background: #eee; padding: 10px; word-break: break-all; font-size: 12px; }
     </style>
 </head>
-
 <body>
-
-    <div class="container">
-        <h2>Escolha o seu Plano</h2>
-        <p class="sub">Libere o acesso completo e gere orçamentos profissionais em segundos.</p>
-
-        <div class="planos" id="area-planos">
-            <div class="plano-card">
-                <div class="plano-nome">Básico</div>
-                <div class="plano-preco">R$ 10,00<span>/mês</span></div>
-                <ul class="plano-lista">
-                    <li>Até <b>5 Orçamentos</b> /mês</li>
-                    <li>Geração de PDF</li>
-                    <li>Envio direto via WhatsApp</li>
-                </ul>
-                <button class="btn-comprar" onclick="iniciarPagamento('Basico')">Pagar com Pix</button>
-            </div>
-
-            <div class="plano-card plano-destaque">
-                <div class="tag-destaque">MAIS VANTAJOSO</div>
-                <div class="plano-nome">Ilimitado</div>
-                <div class="plano-preco">R$ 30,00<span>/mês</span></div>
-                <ul class="plano-lista">
-                    <li>Orçamentos <b>Ilimitados</b></li>
-                    <li>Geração de PDF</li>
-                    <li>Envio direto via WhatsApp</li>
-                </ul>
-                <button class="btn-comprar" style="background-color: #0d6efd;"
-                    onclick="iniciarPagamento('Ilimitado')">Pagar com Pix</button>
-            </div>
+    <div class="card">
+        <h2>Seu limite acabou! 🚀</h2>
+        <p>Escolha um plano para continuar gerando orçamentos ilimitados.</p>
+        <button onclick="gerarPix('Basico')" style="background: #28a745; color: white; padding: 10px; width: 100%; border: none; cursor: pointer;">Pagar R$ 10,00 (Plano Básico)</button>
+        
+        <div id="pix-resultado" style="display:none; margin-top: 20px;">
+            <img id="img-qrcode" class="qr-code">
+            <div class="pix-code" id="txt-pix"></div>
+            <p>Pague e seu acesso será liberado!</p>
         </div>
-
-        <div id="carregando">⏳ Gerando seu código Pix no Mercado Pago...</div>
-
-        <div id="pix-area">
-            <h3 style="color: #28a745;">Pedido gerado com sucesso!</h3>
-            <p>Escaneie o QR Code abaixo com o aplicativo do seu banco:</p>
-
-            <img id="img-qrcode" class="qr-code-img" src="" alt="QR Code Pix">
-
-            <p>Ou copie o código abaixo (Pix Copia e Cola):</p>
-            <input type="text" id="input-copiacola" class="pix-input" readonly>
-
-            <button class="btn-comprar" style="background-color: #0d6efd;" onclick="copiarPix()">Copiar Código
-                Pix</button>
-        </div>
-
-        <button class="btn-voltar" onclick="window.location.href='/'">Voltar para o sistema</button>
+        <br><br>
+        <a href="/painel">Voltar ao painel</a>
     </div>
 
     <script>
-        // LINK DO SEU SERVIDOR NO RENDER
-        const LINK_API = "https://saas-orcamentos-6v6r.onrender.com";
-
-        async function iniciarPagamento(planoEscolhido) {
-            const emailUsuario = localStorage.getItem("usuario_logado");
-
-            if (!emailUsuario) {
-                alert("Sessão expirada. Faça login novamente.");
-                window.location.href = "login.html";
-                return;
-            }
-
-            document.getElementById('area-planos').style.display = 'none';
-            document.getElementById('carregando').style.display = 'block';
-
-            try {
-                // AJUSTE: Trocado para o link do Render
-                const resposta = await fetch(`${LINK_API}/gerar_pix`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: emailUsuario, plano: planoEscolhido })
-                });
-
-                const dados = await resposta.json();
-
-                document.getElementById('carregando').style.display = 'none';
-
-                if (resposta.ok) {
-                    document.getElementById('pix-area').style.display = 'block';
-                    document.getElementById('img-qrcode').src = "data:image/jpeg;base64," + dados.qr_code_imagem;
-                    document.getElementById('input-copiacola').value = dados.codigo_copia_cola;
-                } else {
-                    alert("Erro ao gerar Pix: " + dados.detail);
-                    document.getElementById('area-planos').style.display = 'flex';
-                }
-            } catch (erro) {
-                alert("Erro ao conectar com o servidor no Render.");
-                document.getElementById('carregando').style.display = 'none';
-                document.getElementById('area-planos').style.display = 'flex';
-                console.error(erro);
-            }
-        }
-
-        function copiarPix() {
-            const inputPix = document.getElementById('input-copiacola');
-            inputPix.select();
-            inputPix.setSelectionRange(0, 99999);
-            navigator.clipboard.writeText(inputPix.value);
-            alert("Código copiado! Cole no aplicativo do seu banco para pagar.");
+        async function gerarPix(plano) {
+            const email = localStorage.getItem("usuario_logado");
+            const res = await fetch(`https://saas-orcamentos.onrender.com/gerar_pix`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, plano })
+            });
+            const dados = await res.json();
+            document.getElementById('pix-resultado').style.display = 'block';
+            document.getElementById('img-qrcode').src = "data:image/jpeg;base64," + dados.qr_code_imagem;
+            document.getElementById('txt-pix').innerText = dados.codigo_copia_cola;
         }
     </script>
 </body>
-
 </html>
