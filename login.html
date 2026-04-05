@@ -152,6 +152,9 @@
     </div>
 
     <script>
+        // LINK DO SEU SERVIDOR NO RENDER
+        const LINK_API = "https://saas-orcamentos-6v6r.onrender.com";
+
         async function cadastrar() {
             const email = document.getElementById('email').value;
             const senha = document.getElementById('senha').value;
@@ -162,7 +165,8 @@
             }
 
             try {
-                const resposta = await fetch('http://127.0.0.1:8000/cadastrar', {
+                // AJUSTE: Trocado para o link do Render
+                const resposta = await fetch(`${LINK_API}/cadastrar`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: email, senha: senha })
@@ -176,7 +180,7 @@
                     alert("Erro: " + dados.detail);
                 }
             } catch (erro) {
-                alert("Erro ao conectar com o servidor. O back-end está rodando?");
+                alert("Erro ao conectar com o servidor no Render.");
                 console.error(erro);
             }
         }
@@ -191,7 +195,8 @@
             }
 
             try {
-                const resposta = await fetch('http://127.0.0.1:8000/login', {
+                // AJUSTE: Trocado para o link do Render
+                const resposta = await fetch(`${LINK_API}/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: email, senha: senha })
@@ -202,12 +207,13 @@
                 if (resposta.ok) {
                     alert("Bem-vindo! Redirecionando para o painel...");
                     localStorage.setItem("usuario_logado", email);
-                    window.location.href = "index.html";
+                    // O Render vai servir o index.html na raiz
+                    window.location.href = "/"; 
                 } else {
                     alert("Erro: " + dados.detail);
                 }
             } catch (erro) {
-                alert("Erro ao conectar com o servidor.");
+                alert("Erro ao conectar com o servidor no Render.");
                 console.error(erro);
             }
         }
