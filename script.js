@@ -1,6 +1,10 @@
 let itensOrcamento = [];
 let valorTotal = 0;
 
+// --- AJUSTE DE OURO: O link do seu servidor no Render ---
+// Substitua o link abaixo pelo SEU link do Render (o que termina em .onrender.com)
+const LINK_API = "https://saas-orcamentos-6v6r.onrender.com"; 
+
 const hoje = new Date().toLocaleDateString('pt-BR');
 document.getElementById('data-hoje').innerText = hoje;
 
@@ -48,19 +52,20 @@ function atualizarDocumento() {
 }
 
 // ==========================================
-// A CATRACA (VERIFICA O LIMITE NO BACK-END)
+// A CATRACA (AGORA CONECTADA AO RENDER)
 // ==========================================
 async function checarPaywall(acao) {
     const emailUsuario = localStorage.getItem("usuario_logado");
 
     if (!emailUsuario) {
         alert("Você precisa fazer login para gerar orçamentos!");
-        window.location.href = "login.html"; // Manda de volta pro login
+        window.location.href = "login.html"; 
         return;
     }
 
     try {
-        const resposta = await fetch('http://127.0.0.1:8000/verificar_limite', {
+        // AJUSTE: Trocado '127.0.0.1' pelo link real do seu servidor
+        const resposta = await fetch(`${LINK_API}/verificar_limite`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: emailUsuario })
@@ -69,31 +74,32 @@ async function checarPaywall(acao) {
         const dados = await resposta.json();
 
         if (resposta.ok) {
-            // Tem crédito! Libera a ação solicitada
             if (acao === 'pdf') gerarPDF();
             if (acao === 'whatsapp') enviarWhatsApp();
         } else {
-            // Bateu no Paywall!
             if (resposta.status === 402) {
                 alert("🔒 " + dados.detail + "\n\nRedirecionando para a tela de Upgrade...");
-                
-                // ESSA É A LINHA QUE TROCA DE TELA:
                 window.location.href = "pagamento.html"; 
             } else {
                 alert("Erro: " + dados.detail);
             }
         }
     } catch (erro) {
-        alert("Erro ao conectar com o servidor.");
+        alert("Erro ao conectar com o servidor no Render.");
         console.error(erro);
     }
 }
 
-// Funções Originais
 function gerarPDF() {
     const elemento = document.getElementById('documento-orcamento');
     const nomeCliente = document.getElementById('nome-cliente').value || 'Cliente';
-    const opcoes = { margin: 0, filename: `Orcamento_${nomeCliente}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
+    const opcoes = { 
+        margin: 0, 
+        filename: `Orcamento_${nomeCliente}.pdf`, 
+        image: { type: 'jpeg', quality: 0.98 }, 
+        html2canvas: { scale: 2 }, 
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } 
+    };
     html2pdf().set(opcoes).from(elemento).save();
 }
 
@@ -104,7 +110,9 @@ function enviarWhatsApp() {
     if (itensOrcamento.length === 0) { alert("O orçamento está vazio."); return; }
 
     let mensagem = `Olá, *${nomeCliente}*!\n\nAqui está o resumo do seu orçamento gerado em ${hoje}:\n\n`;
-    itensOrcamento.forEach(item => { mensagem += `🔹 *${item.descricao}*\nQtd: ${item.quantidade} | Un: R$ ${item.valorUnitario.toFixed(2)} | Sub: R$ ${item.subtotal.toFixed(2)}\n\n`; });
+    itensOrcamento.forEach(item => { 
+        mensagem += `🔹 *${item.descricao}*\nQtd: ${item.quantidade} | Un: R$ ${item.valorUnitario.toFixed(2)} | Sub: R$ ${item.subtotal.toFixed(2)}\n\n`; 
+    });
     mensagem += `*TOTAL DO ORÇAMENTO: R$ ${valorTotal.toFixed(2)}*\n\nSe aprovado, por favor nos confirme. Qualquer dúvida, estamos à disposição.`;
     
     const mensagemCodificada = encodeURIComponent(mensagem);
