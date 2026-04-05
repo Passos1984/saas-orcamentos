@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - SaaS de Orçamentos</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-container h2 {
+            margin-top: 0;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .btn-entrar {
+            background-color: #0d6efd;
+            color: white;
+        }
+
+        .btn-entrar:hover {
+            background-color: #0b5ed7;
+        }
+
+        .divisor {
+            margin: 20px 0;
+            color: #888;
+            font-size: 14px;
+            position: relative;
+        }
+
+        .divisor::before,
+        .divisor::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: #ddd;
+        }
+
+        .divisor::before {
+            left: 0;
+        }
+
+        .divisor::after {
+            right: 0;
+        }
+
+        .btn-google {
+            background-color: white;
+            color: #444;
+            border: 1px solid #ccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-google:hover {
+            background-color: #f8f9fa;
+        }
+
+        .links {
+            margin-top: 15px;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .links a {
+            color: #0d6efd;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-container">
+        <h2>Entrar no Sistema</h2>
+
+        <input type="email" id="email" placeholder="Seu e-mail">
+        <input type="password" id="senha" placeholder="Sua senha">
+
+        <button class="btn-entrar" onclick="fazerLogin()">Entrar</button>
+        <button class="btn-entrar" style="background-color: #28a745;" onclick="cadastrar()">Cadastrar Nova
+            Conta</button>
+
+        <div class="links">
+            Esqueceu a senha? <a href="#">Recuperar</a>
+        </div>
+
+        <div class="divisor">OU</div>
+
+        <button class="btn-google" onclick="loginComGoogle()">
+            <svg width="20" height="20" viewBox="0 0 48 48">
+                <path fill="#EA4335"
+                    d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                <path fill="#4285F4"
+                    d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                <path fill="#FBBC05"
+                    d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+                <path fill="#34A853"
+                    d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+                <path fill="none" d="M0 0h48v48H0z" />
+            </svg>
+            Continuar com o Google
+        </button>
+    </div>
+
+    <script>
+        async function cadastrar() {
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+
+            if (!email || !senha) {
+                alert("Preencha e-mail e senha!");
+                return;
+            }
+
+            try {
+                const resposta = await fetch('http://127.0.0.1:8000/cadastrar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email, senha: senha })
+                });
+
+                const dados = await resposta.json();
+
+                if (resposta.ok) {
+                    alert("Sucesso: " + dados.mensagem + "\nPlano: " + dados.plano);
+                } else {
+                    alert("Erro: " + dados.detail);
+                }
+            } catch (erro) {
+                alert("Erro ao conectar com o servidor. O back-end está rodando?");
+                console.error(erro);
+            }
+        }
+
+        async function fazerLogin() {
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+
+            if (!email || !senha) {
+                alert("Preencha e-mail e senha!");
+                return;
+            }
+
+            try {
+                const resposta = await fetch('http://127.0.0.1:8000/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email, senha: senha })
+                });
+
+                const dados = await resposta.json();
+
+                if (resposta.ok) {
+                    alert("Bem-vindo! Redirecionando para o painel...");
+                    localStorage.setItem("usuario_logado", email);
+                    window.location.href = "index.html";
+                } else {
+                    alert("Erro: " + dados.detail);
+                }
+            } catch (erro) {
+                alert("Erro ao conectar com o servidor.");
+                console.error(erro);
+            }
+        }
+
+        function loginComGoogle() {
+            alert("Em breve: Integração com a API do Google na próxima fase!");
+        }
+    </script>
+</body>
+
+</html>
