@@ -6,6 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import models
 import mercadopago
 import uuid  # Para gerar chaves de transação únicas
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
 
 app = FastAPI(title="SaaS de Orçamentos API")
 
@@ -15,7 +18,7 @@ sdk = mercadopago.SDK("APP_USR-127374858769532-040423-f3a30250b98093c7f0b6dc9926
 # Permite que o Front-end converse com o Back-end
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Quando você tiver seu domínio (ex: seunome.pythonanywhere.com), coloque ele aqui
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -102,7 +105,6 @@ def gerar_pix(dados: DadosPagamento):
         }
     }
     
-    # Chave de segurança para evitar duplicidade
     request_options = mercadopago.config.RequestOptions()
     request_options.custom_headers = {'x-idempotency-key': str(uuid.uuid4())}
 
@@ -117,42 +119,42 @@ def gerar_pix(dados: DadosPagamento):
                 "payment_id": payment["id"]
             }
         else:
-            print("ERRO MP:", payment)
             raise HTTPException(status_code=400, detail="Erro no Mercado Pago")
 
     except Exception as e:
-        print(f"ERRO CRÍTICO: {str(e)}")
         raise HTTPException(status_code=500, detail="Erro interno no servidor")
-
-# --- WEBHOOK DO MERCADO PAGO ---
 
 @app.post("/webhook")
 async def receber_notificacao(id: str = None, topic: str = None, db: Session = Depends(get_db)):
-    # O Mercado Pago avisa quando um pagamento muda de status
     if topic == "payment" and id:
         try:
-            # 1. Pergunta ao Mercado Pago os detalhes desse pagamento
             result = sdk.payment().get(id)
             payment_info = result.get("response")
 
-            # 2. Se o pagamento foi APROVADO
             if payment_info and payment_info.get("status") == "approved":
                 email_cliente = payment_info["payer"]["email"]
                 descricao = payment_info["description"]
 
-                # 3. Procura o usuário no seu banco de dados
                 usuario = db.query(models.Usuario).filter(models.Usuario.email == email_cliente).first()
                 
                 if usuario:
-                    # 4. Define o novo plano baseado na descrição que colocamos no Pix
                     if "Basico" in descricao:
                         usuario.plano = "Basico"
                     elif "Ilimitado" in descricao:
                         usuario.plano = "Ilimitado"
                     
                     db.commit()
-                    print(f"✅ PLANO ATUALIZADO: {email_cliente} agora é {usuario.plano}")
         except Exception as e:
             print(f"Erro no webhook: {e}")
             
     return {"status": "ok"}
+
+# --- AS LINHAS MÁGICAS PARA O FRONT-END ---
+
+# Faz o FastAPI servir seus arquivos de estilo e scripts
+app.mount("/static", StaticFiles(directory="."), name="static")
+
+@app.get("/")
+async def principal():
+    # Isso faz o link principal abrir o seu arquivo HTML bonitão
+    return FileResponse("index.html")
