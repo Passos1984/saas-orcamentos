@@ -12,6 +12,7 @@ import os
 
 app = FastAPI(title="SaaS de Orçamentos API")
 
+# Configuração do Mercado Pago
 sdk = mercadopago.SDK("APP_USR-127374858769532-040423-f3a30250b98093c7f0b6dc9926ec86eb-81304613")
 
 app.add_middleware(
@@ -42,7 +43,8 @@ class DadosPagamento(BaseModel):
     email: str
     plano: str
 
-# --- ROTAS DE API ---
+# --- ROTAS DE API (BANCO DE DADOS) ---
+
 @app.post("/cadastrar", status_code=status.HTTP_201_CREATED)
 def cadastrar_usuario(user: UsuarioCriar, db: Session = Depends(get_db)):
     usuario_existente = db.query(models.Usuario).filter(models.Usuario.email == user.email).first()
@@ -66,8 +68,11 @@ def login(user: UsuarioCriar, db: Session = Depends(get_db)):
 def verificar_limite(dados: SolicitarOrcamento, db: Session = Depends(get_db)):
     usuario = db.query(models.Usuario).filter(models.Usuario.email == dados.email).first()
     if not usuario: raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+    
+    # REGRA DO PAYWALL
     if usuario.plano == "Gratis" and usuario.orcamentos_feitos >= 1:
         raise HTTPException(status_code=402, detail="Limite gratuito atingido!")
+    
     usuario.orcamentos_feitos += 1
     db.commit()
     return {"mensagem": "Liberado!"}
@@ -77,7 +82,7 @@ def gerar_pix(dados: DadosPagamento):
     valor = 10.00 if dados.plano == "Basico" else 30.00
     payment_data = {
         "transaction_amount": float(valor),
-        "description": f"Plano {dados.plano}",
+        "description": f"Plano {dados.plano} - SaaS Orcamentos",
         "payment_method_id": "pix",
         "payer": {"email": dados.email, "first_name": "Cliente"}
     }
@@ -90,7 +95,8 @@ def gerar_pix(dados: DadosPagamento):
         "qr_code_imagem": payment["point_of_interaction"]["transaction_data"]["qr_code_base64"]
     }
 
-# --- NAVEGAÇÃO DO FRONTEND ---
+# --- NAVEGAÇÃO (PÁGINAS) ---
+
 app.mount("/static", StaticFiles(directory="."), name="static")
 
 @app.get("/")
