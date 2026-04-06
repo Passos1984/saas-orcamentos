@@ -2,57 +2,123 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Login - SaaS de Orçamentos</title>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Gerador de Orçamentos Online | Crie PDFs e Envie via WhatsApp</title>
+    <meta name="description" content="Sistema rápido e prático para criar orçamentos profissionais. Calcule valores automaticamente, gere documentos em PDF e envie direto para o WhatsApp do seu cliente.">
+    <meta name="keywords" content="gerador de orçamento, criar orçamento online, sistema de orçamentos, orçamento em pdf, enviar orçamento whatsapp, orçamento para autônomos, saas orçamentos">
+    <meta name="robots" content="index, follow">
+
     <link rel="stylesheet" href="/static/style.css">
     
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <style>
-        body { display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; }
-        .box { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 350px; text-align: center; }
-        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-bottom: 10px; color: white; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
-        /* Estilos da linha de divisão "ou" */
+        body { 
+            display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; background: #f0f2f5; 
+            margin: 0; padding: 20px; 
+        }
+
+        /* Envolve os textos e a caixa de login */
+        .wrapper {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            gap: 40px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        /* O texto de vendas para atrair o cliente e o Google */
+        .seo-text { flex: 1; }
+        .seo-text h1 { color: #111; font-size: 32px; margin-bottom: 15px; line-height: 1.2; }
+        .seo-text p { color: #555; font-size: 16px; margin-bottom: 20px; line-height: 1.5; }
+        .seo-text ul { list-style: none; padding: 0; color: #444; font-size: 15px;}
+        .seo-text li { margin-bottom: 12px; display: flex; align-items: center; gap: 8px;}
+        .seo-text li::before { content: "✅"; }
+
+        /* A caixa de login agora é flexível! */
+        .box { 
+            background: white; padding: 40px; border-radius: 10px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
+            width: 100%; max-width: 400px; text-align: center; 
+        }
+        
+        input { width: 100%; padding: 14px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px;}
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: bold; margin-bottom: 10px; color: white; transition: 0.2s;}
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        
         .divisor { margin: 20px 0; color: #888; font-size: 14px; position: relative; }
         .divisor::before, .divisor::after { content: ""; position: absolute; top: 50%; width: 40%; height: 1px; background: #ddd; }
         .divisor::before { left: 0; } .divisor::after { right: 0; }
         .google-btn-container { display: flex; justify-content: center; width: 100%; margin-top: 10px; }
+
+        /* 📱 QUANDO A TELA FOR PEQUENA (CELULAR), EMPILHA TUDO! */
+        @media (max-width: 768px) {
+            .wrapper {
+                flex-direction: column;
+                text-align: center;
+                gap: 20px;
+            }
+            .seo-text h1 { font-size: 26px; }
+            .seo-text ul { text-align: left; display: inline-block; }
+            .box { padding: 30px 20px; }
+        }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h2>Entrar no Sistema</h2>
-        <input type="email" id="email" placeholder="E-mail">
-        <input type="password" id="senha" placeholder="Senha">
-        <button class="btn" style="background: #0d6efd" onclick="fazerLogin()">Entrar</button>
-        <button class="btn" style="background: #28a745" onclick="cadastrar()">Criar Conta Grátis</button>
-        
-        <div class="divisor">ou</div>
 
-        <div id="g_id_onload"
-             data-client_id="529716122949-kv1v46q6d62dejho6goqpu91q4q4cf77.apps.googleusercontent.com"
-             data-context="signin"
-             data-ux_mode="popup"
-             data-callback="loginComGoogleResposta"
-             data-auto_prompt="false">
+    <div class="wrapper">
+        
+        <div class="seo-text">
+            <h1>Orçamentos profissionais em poucos cliques</h1>
+            <p>Pare de perder tempo com planilhas complicadas. Nosso sistema foi criado para profissionais que precisam de agilidade e uma apresentação impecável para seus clientes.</p>
+            <ul>
+                <li>Cálculo automático de itens e subtotais</li>
+                <li>Geração instantânea de arquivos em PDF</li>
+                <li>Envio direto para o WhatsApp do cliente</li>
+                <li>Acesse do celular, tablet ou computador</li>
+            </ul>
         </div>
-        <div class="google-btn-container">
-            <div class="g_id_signin"
-                 data-type="standard"
-                 data-shape="rectangular"
-                 data-theme="outline"
-                 data-text="signin_with"
-                 data-size="large"
-                 data-logo_alignment="center">
+
+        <div class="box">
+            <h2 style="margin-top: 0; color: #333;">Acessar Sistema</h2>
+            <input type="email" id="email" placeholder="Seu E-mail">
+            <input type="password" id="senha" placeholder="Sua Senha">
+            <button class="btn" style="background: #0d6efd" onclick="fazerLogin()">Entrar</button>
+            <button class="btn" style="background: #28a745" onclick="cadastrar()">Criar Conta Grátis</button>
+            
+            <div class="divisor">ou</div>
+
+            <div id="g_id_onload"
+                 data-client_id="529716122949-kv1v46q6d62dejho6goqpu91q4q4cf77.apps.googleusercontent.com"
+                 data-context="signin"
+                 data-ux_mode="popup"
+                 data-callback="loginComGoogleResposta"
+                 data-auto_prompt="false">
+            </div>
+            <div class="google-btn-container">
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-shape="rectangular"
+                     data-theme="outline"
+                     data-text="signin_with"
+                     data-size="large"
+                     data-logo_alignment="center">
+                </div>
             </div>
         </div>
+
     </div>
 
     <script>
         const LINK_API = "https://saas-orcamentos.onrender.com";
 
-        // Login Tradicional
         async function fazerLogin() {
             const email = document.getElementById('email').value;
             const senha = document.getElementById('senha').value;
@@ -67,7 +133,6 @@
             } else { alert("E-mail ou senha incorretos!"); }
         }
 
-        // Cadastro Tradicional
         async function cadastrar() {
             const email = document.getElementById('email').value;
             const senha = document.getElementById('senha').value;
@@ -80,22 +145,18 @@
             alert(res.ok ? "Conta criada! Agora faça login." : dados.detail);
         }
 
-        // --- NOVA FUNÇÃO: LOGIN COM GOOGLE ---
         async function loginComGoogleResposta(response) {
-            const tokenGoogle = response.credential; // O Google manda um token seguro
-            
+            const tokenGoogle = response.credential;
             try {
                 const res = await fetch(`${LINK_API}/login/google`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token: tokenGoogle })
                 });
-
                 const dados = await res.json();
-
                 if (res.ok) {
-                    localStorage.setItem("usuario_logado", dados.email); // Salva o email
-                    window.location.href = "/painel"; // Manda pro painel
+                    localStorage.setItem("usuario_logado", dados.email);
+                    window.location.href = "/painel";
                 } else {
                     alert("Erro no login com Google: " + dados.detail);
                 }
