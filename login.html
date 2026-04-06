@@ -4,25 +4,55 @@
     <meta charset="UTF-8">
     <title>Login - SaaS de Orçamentos</title>
     <link rel="stylesheet" href="/static/style.css">
+    
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
     <style>
         body { display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; }
         .box { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 350px; text-align: center; }
         input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; }
         .btn { width: 100%; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-bottom: 10px; color: white; }
+        
+        /* Estilos da linha de divisão "ou" */
+        .divisor { margin: 20px 0; color: #888; font-size: 14px; position: relative; }
+        .divisor::before, .divisor::after { content: ""; position: absolute; top: 50%; width: 40%; height: 1px; background: #ddd; }
+        .divisor::before { left: 0; } .divisor::after { right: 0; }
+        .google-btn-container { display: flex; justify-content: center; width: 100%; margin-top: 10px; }
     </style>
 </head>
 <body>
     <div class="box">
-        <h2>Entrar no SaaS</h2>
+        <h2>Entrar no Sistema</h2>
         <input type="email" id="email" placeholder="E-mail">
         <input type="password" id="senha" placeholder="Senha">
         <button class="btn" style="background: #0d6efd" onclick="fazerLogin()">Entrar</button>
         <button class="btn" style="background: #28a745" onclick="cadastrar()">Criar Conta Grátis</button>
+        
+        <div class="divisor">ou</div>
+
+        <div id="g_id_onload"
+             data-client_id="529716122949-kv1v46q6d62dejho6goqpu91q4q4cf77.apps.googleusercontent.com"
+             data-context="signin"
+             data-ux_mode="popup"
+             data-callback="loginComGoogleResposta"
+             data-auto_prompt="false">
+        </div>
+        <div class="google-btn-container">
+            <div class="g_id_signin"
+                 data-type="standard"
+                 data-shape="rectangular"
+                 data-theme="outline"
+                 data-text="signin_with"
+                 data-size="large"
+                 data-logo_alignment="center">
+            </div>
+        </div>
     </div>
 
     <script>
         const LINK_API = "https://saas-orcamentos.onrender.com";
 
+        // Login Tradicional
         async function fazerLogin() {
             const email = document.getElementById('email').value;
             const senha = document.getElementById('senha').value;
@@ -37,6 +67,7 @@
             } else { alert("E-mail ou senha incorretos!"); }
         }
 
+        // Cadastro Tradicional
         async function cadastrar() {
             const email = document.getElementById('email').value;
             const senha = document.getElementById('senha').value;
@@ -47,6 +78,30 @@
             });
             const dados = await res.json();
             alert(res.ok ? "Conta criada! Agora faça login." : dados.detail);
+        }
+
+        // --- NOVA FUNÇÃO: LOGIN COM GOOGLE ---
+        async function loginComGoogleResposta(response) {
+            const tokenGoogle = response.credential; // O Google manda um token seguro
+            
+            try {
+                const res = await fetch(`${LINK_API}/login/google`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: tokenGoogle })
+                });
+
+                const dados = await res.json();
+
+                if (res.ok) {
+                    localStorage.setItem("usuario_logado", dados.email); // Salva o email
+                    window.location.href = "/painel"; // Manda pro painel
+                } else {
+                    alert("Erro no login com Google: " + dados.detail);
+                }
+            } catch (erro) {
+                alert("Erro ao conectar com o servidor.");
+            }
         }
     </script>
 </body>
