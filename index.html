@@ -2,58 +2,127 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Gerador de Orçamentos</title>
-    <link rel="stylesheet" href="/static/style.css">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Painel - SaaS de Orçamentos</title>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body { 
+            background-color: #f4f4f9; 
+            padding: 20px; 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+        }
+        
+        .container { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+            width: 100%; 
+            max-width: 800px; 
+        }
+        
+        h2 { color: #333; margin-top: 0; text-align: center; }
+        
+        .grupo-input { margin-bottom: 15px; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; color: #555; }
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 15px; }
+        
+        /* Caixas lado a lado no PC */
+        .flex-inputs { display: flex; gap: 10px; margin-bottom: 15px; }
+        
+        button { 
+            padding: 12px; border: none; border-radius: 5px; 
+            cursor: pointer; font-weight: bold; color: white; 
+            font-size: 15px; transition: 0.2s; 
+        }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        
+        #btn-adicionar { background-color: #0d6efd; width: 100%; margin-top: 10px; }
+        
+        /* Tabela Protegida com barra de rolagem */
+        .tabela-container { overflow-x: auto; white-space: nowrap; margin-top: 20px; border-radius: 5px;}
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f8f9fa; color: #333; }
+        
+        .total-box { text-align: right; font-size: 20px; font-weight: bold; margin-top: 15px; color: #28a745; }
+        
+        /* Botões Finais */
+        .acoes-finais { display: flex; gap: 10px; margin-top: 30px; }
+        #btn-pdf { background-color: #dc3545; flex: 1; }
+        #btn-whatsapp { background-color: #25D366; flex: 1; }
+        .btn-sair { background-color: #6c757d; }
+
+        /* 📱 AJUSTES PARA O CELULAR */
+        @media (max-width: 768px) {
+            .container { padding: 15px; }
+            
+            /* Coloca os campos de quantidade e valor um embaixo do outro */
+            .flex-inputs { flex-direction: column; gap: 10px; margin-bottom: 0; }
+            .flex-inputs input { margin-bottom: 10px; }
+            
+            /* Empilha os botões de PDF, WhatsApp e Sair */
+            .acoes-finais { flex-direction: column; gap: 10px; }
+            .acoes-finais button { width: 100%; margin-bottom: 0px; }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="painel-controles">
-            <h2>Novo Orçamento</h2>
-            <div class="grupo-input">
-                <label>Cliente:</label>
-                <input type="text" id="nome-cliente" placeholder="Nome do Cliente">
-                <input type="text" id="telefone-cliente" placeholder="WhatsApp">
-            </div>
-            <div class="grupo-input">
-    <label>Item:</label>
-    <input type="text" id="desc-item" placeholder="Descrição (Ex: Criação de Site)">
-    
-    <div style="display: flex; gap: 10px;">
-        <input type="number" id="qtd-item" placeholder="Qtd" value="1" min="1">
-        <input type="number" id="valor-item" placeholder="Valor Unitário (R$)" step="0.01">
-    </div>
-    
-    <button id="btn-adicionar" onclick="adicionarItem()">Adicionar Item</button>
-</div>
-            <div class="acoes-finais">
-                <button id="btn-pdf" onclick="checarPaywall('pdf')">Baixar PDF</button>
-                <button id="btn-whatsapp" onclick="checarPaywall('whatsapp')">Enviar WhatsApp</button>
-                <button onclick="localStorage.clear(); window.location.href='/'" style="background:#666; color:white">Sair</button>
-            </div>
+
+    <div class="container" id="orcamento-conteudo">
+        <h2>Gerador de Orçamento</h2>
+        
+        <div class="grupo-input">
+            <label>Nome do Cliente:</label>
+            <input type="text" id="cliente" placeholder="Ex: João da Silva">
         </div>
 
-        <div class="painel-preview">
-            <div id="documento-orcamento" class="folha-a4">
-                <div class="cabecalho-doc">
-                    <h1>ORÇAMENTO</h1>
-                    <p>Data: <span id="data-hoje"></span></p>
-                </div>
-                <div class="dados-cliente-doc">
-                    <p><strong>Cliente:</strong> <span id="doc-cliente-nome">Nenhum</span></p>
-                </div>
-                <table class="tabela-itens">
-                    <thead>
-                        <tr><th>Desc</th><th>Qtd</th><th>Unit</th><th>Sub</th></tr>
-                    </thead>
-                    <tbody id="doc-lista-itens"></tbody>
-                </table>
-                <div class="total-doc">
-                    <h3>Total: R$ <span id="doc-total">0,00</span></h3>
-                </div>
+        <div class="grupo-input">
+            <label>Adicionar Item:</label>
+            <input type="text" id="desc-item" placeholder="Descrição do serviço ou produto">
+            
+            <div class="flex-inputs">
+                <input type="number" id="qtd-item" placeholder="Quantidade" value="1" min="1">
+                <input type="number" id="valor-item" placeholder="Valor Unitário (R$)" step="0.01">
             </div>
+            
+            <button id="btn-adicionar" onclick="adicionarItem()">+ Adicionar Item</button>
+        </div>
+
+        <div class="tabela-container">
+            <table id="tabela-itens">
+                <thead>
+                    <tr>
+                        <th>Descrição</th>
+                        <th>Qtd</th>
+                        <th>Valor Unit.</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody id="lista-itens">
+                    </tbody>
+            </table>
+        </div>
+
+        <div class="total-box">
+            Total: R$ <span id="total-orcamento">0.00</span>
+        </div>
+
+        <div class="acoes-finais" data-html2canvas-ignore="true">
+            <button id="btn-pdf" onclick="checarPaywall('pdf')">Baixar PDF</button>
+            <button id="btn-whatsapp" onclick="checarPaywall('whatsapp')">Enviar WhatsApp</button>
+            <button class="btn-sair" onclick="localStorage.clear(); window.location.href='/'">Sair</button>
         </div>
     </div>
+
     <script src="/static/script.js"></script>
 </body>
 </html>
